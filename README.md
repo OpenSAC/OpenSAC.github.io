@@ -97,7 +97,7 @@ Then visit http://localhost:8000
 
 3. Select the main branch
 
-4. your OpenSAC will be available at https://yourusername.github.io/opensac
+4. your OpenSAC will be available at https://opensac.github.io
 
 ### 💡 Usage
 
