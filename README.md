@@ -6,12 +6,10 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Groq](https://img.shields.io/badge/Powered%20by-Groq-10a37f)](https://groq.com)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 **A modern, free chat interface for Groq Cloud AI models**
 
 [Features](#features) •
-[Installation](#installation) •
 [Usage](#usage) •
 [Configuration](#configuration) •
 [Contributing](#contributing) •
