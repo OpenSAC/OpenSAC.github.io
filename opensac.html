@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>OpenSAC • Chat AI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js">
+  </script>
+  <style>
+    :root {
+      --bg-main: #212121;
+      --bg-sidebar: #171717;
+      --bg-input: #2f2f2f;
+      --text-main: #ececec;
+      --text-dim: #a0a0a0;
+      --accent: #10a37f;
+      --danger: #e5484d;
+      --border-soft: #2f2f2f;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html,
+    body {
+      height: 100%;
+    }
+    
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    ::selection {
+      background: rgba(16, 163, 127, 0.35);
+    }
+    
+    .app {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+    
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: var(--bg-sidebar);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border-soft);
+      transition: transform .25s ease;
+      z-index: 100;
+    }
+    
+    .new-chat-btn {
+      margin: 12px;
+      padding: 11px 14px;
+      background: transparent;
+      border: 1px solid #333;
+      border-radius: 12px;
+      color: var(--text-main);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background .15s ease, border-color .15s ease, transform .1s ease;
+    }
+    
+    .new-chat-btn:hover {
+      background: #242424;
+      border-color: #454545;
+    }
+    
+    .new-chat-btn:active {
+      transform: scale(.98);
+    }
+    
+    .chat-history {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .chat-history::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .chat-history::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+    
+    .chat-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-dim);
+      gap: 8px;
+      position: relative;
+      transition: background .15s ease, color .15s ease;
+    }
+    
+    .chat-item:hover {
+      background: #222;
+      color: var(--text-main);
+    }
+    
+    .chat-item.active {
+      background: #2a2a2a;
+      color: #fff;
+      box-shadow: inset 2px 0 0 var(--accent);
+    }
+    
+    .chat-item-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+    
+    .chat-item-delete {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s ease, color .12s ease;
+      padding: 4px;
+      font-size: 12.5px;
+    }
+    
+    .chat-item:hover .chat-item-delete {
+      opacity: 1;
+    }
+    
+    .chat-item-delete:hover {
+      color: var(--danger);
+    }
+    
+    .sidebar-footer {
+      border-top: 1px solid var(--border-soft);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .footer-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+    }
+    
+    .footer-btn:hover {
+      background: #262626;
+    }
+    
+    /* CHAT AREA */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      min-width: 0;
+    }
+    
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      flex-shrink: 0;
+      background: rgba(33, 33, 33, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 5;
+    }
+    
+    .chat-header h1 {
+      font-size: 15px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      letter-spacing: .2px;
+    }
+    
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 18px;
+      cursor: pointer;
+    }
+    
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 0 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .messages::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .messages::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 20px;
+      animation: fadeInUp .35s ease;
+    }
+    
+    .empty-state-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #10a37f, #0d8a6c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(16, 163, 127, 0.35);
+    }
+    
+    .empty-state h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    
+    .empty-state p {
+      font-size: 14px;
+      color: var(--text-dim);
+      max-width: 380px;
+    }
+    
+    .msg {
+      display: flex;
+      gap: 12px;
+      padding: 6px 5%;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      animation: fadeInUp .3s ease;
+    }
+    
+    .msg.user {
+      justify-content: flex-end;
+      padding: 10px 5%;
+    }
+    
+    .msg.assistant {
+      justify-content: flex-start;
+      padding: 14px 5%;
+    }
+    
+    .msg-avatar {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      background: linear-gradient(135deg, #10a37f, #0d8a6c);
+      color: #fff;
+      margin-top: 3px;
+    }
+    
+    .msg-bubble {
+      word-wrap: break-word;
+      line-height: 1.65;
+      font-size: 15px;
+      max-width: 100%;
+    }
+    
+    .msg.user .msg-bubble {
+      white-space: pre-wrap;
+      background: var(--bg-input);
+      border-radius: 20px;
+      padding: 11px 18px;
+      max-width: 75%;
+    }
+    
+    .msg.assistant .msg-bubble {
+      padding-top: 3px;
+      max-width: calc(100% - 40px);
+    }
+    
+    .thinking-dots {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 0;
+    }
+    
+    .thinking-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      animation: dotPulse 1.2s infinite ease-in-out;
+    }
+    
+    .thinking-dots span:nth-child(2) {
+      animation-delay: .15s;
+    }
+    
+    .thinking-dots span:nth-child(3) {
+      animation-delay: .3s;
+    }
+    
+    @keyframes dotPulse {
+      0%,
+      80%,
+      100% {
+        opacity: .25;
+        transform: scale(0.75);
+      }
+      40% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    .msg-bubble.markdown-content {
+      white-space: normal;
+    }
+    
+    .msg-bubble.markdown-content p {
+      margin: 0 0 12px 0;
+    }
+    
+    .msg-bubble.markdown-content p:last-child {
+      margin-bottom: 0;
+    }
+    
+    .msg-bubble.markdown-content ul,
+    .msg-bubble.markdown-content ol {
+      margin: 0 0 12px 22px;
+      padding: 0;
+    }
+    
+    .msg-bubble.markdown-content li {
+      margin-bottom: 5px;
+    }
+    
+    .msg-bubble.markdown-content h1,
+    .msg-bubble.markdown-content h2,
+    .msg-bubble.markdown-content h3 {
+      margin: 16px 0 8px 0;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    
+    .msg-bubble.markdown-content h1:first-child,
+    .msg-bubble.markdown-content h2:first-child,
+    .msg-bubble.markdown-content h3:first-child {
+      margin-top: 0;
+    }
+    
+    .msg-bubble.markdown-content code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+      font-size: 13px;
+    }
+    
+    .msg-bubble.markdown-content blockquote {
+      border-left: 3px solid #4a4a4a;
+      padding-left: 14px;
+      color: var(--text-dim);
+      margin: 0 0 12px 0;
+    }
+    
+    .msg-bubble.markdown-content a {
+      color: #4fd1a5;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    
+    .msg-bubble.markdown-content table {
+      border-collapse: collapse;
+      margin: 0 0 12px 0;
+      width: 100%;
+      font-size: 14px;
+    }
+    
+    .msg-bubble.markdown-content th,
+    .msg-bubble.markdown-content td {
+      border: 1px solid #3a3a3a;
+      padding: 7px 11px;
+      text-align: left;
+    }
+    
+    .msg-bubble.markdown-content th {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    
+    .msg-bubble.markdown-content strong {
+      font-weight: 700;
+    }
+    
+    .msg-bubble.markdown-content hr {
+      border: none;
+      border-top: 1px solid #333;
+      margin: 16px 0;
+    }
+    
+    .code-block-wrap {
+      margin: 0 0 14px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #2e2e2e;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1a1a1a;
+      padding: 8px 14px;
+      font-size: 12px;
+      color: #999;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    
+    .code-lang {
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    
+    .code-copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: #999;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 9px;
+      border-radius: 6px;
+      transition: background .15s ease, color .15s ease;
+    }
+    
+    .code-copy-btn:hover {
+      background: #2a2a2a;
+      color: #ececec;
+    }
+    
+    .msg-bubble.markdown-content pre {
+      margin: 0;
+      border-radius: 0;
+      padding: 14px 16px;
+      overflow-x: auto;
+      background: #0b0b0b;
+    }
+    
+    .msg-bubble.markdown-content pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    
+    .msg-bubble.markdown-content pre code::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .input-area {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      max-width: 900px;
+      width: 90%;
+      margin: 0 auto 20px auto;
+      background: var(--bg-input);
+      border-radius: 26px;
+      padding: 12px 12px 12px 20px;
+      border: 1px solid #3a3a3a;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      transition: border-color .18s ease, box-shadow .18s ease;
+      flex-wrap: wrap;
+    }
+    
+    .input-area:focus-within {
+      border-color: #565656;
+      box-shadow: 0 4px 24px rgba(16, 163, 127, 0.18);
+    }
+    
+    #userInput {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 15px;
+      font-family: inherit;
+      resize: none;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.5;
+      padding: 7px 0;
+      min-width: 200px;
+    }
+    
+    .upload-btn,
+    #sendBtn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color .15s ease, background .15s ease;
+    }
+    
+    .upload-btn:hover {
+      color: #fff;
+      background: #3a3a3a;
+    }
+    
+    #sendBtn {
+      background: var(--text-main);
+      color: #212121;
+    }
+    
+    #sendBtn:hover:not(:disabled) {
+      transform: scale(1.08);
+    }
+    
+    #sendBtn:active:not(:disabled) {
+      transform: scale(.95);
+    }
+    
+    #sendBtn:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+    
+    #userInput:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+    
+    .file-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #1e1e1e;
+      border-radius: 20px;
+      padding: 4px 12px 4px 4px;
+      margin-right: 8px;
+      font-size: 12px;
+      max-width: 180px;
+      border: 1px solid #3a3a3a;
+    }
+    
+    .file-preview img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    .file-preview span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .file-preview button {
+      background: none;
+      border: none;
+      color: #999;
+      cursor: pointer;
+      margin-left: auto;
+    }
+    
+    .capability-toggle {
+      display: flex;
+      gap: 8px;
+      margin-right: 6px;
+      align-items: center;
+    }
+    
+    .capability-btn {
+      background: transparent;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    
+    .capability-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    
+    .capability-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .block-banner {
+      max-width: 900px;
+      width: 90%;
+      margin: 0 auto 10px auto;
+      background: rgba(229, 72, 77, 0.15);
+      border: 1px solid var(--danger);
+      color: #ff9a9d;
+      padding: 10px 16px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: .3px;
+    }
+    
+    .blocked-area {
+      max-width: 900px;
+      width: 90%;
+      margin: 0 auto 18px auto;
+      background: var(--bg-input);
+      border: 1px solid var(--danger);
+      color: #ff9a9d;
+      padding: 16px 18px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+    }
+    
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    
+    .modal {
+      background: #1e1e1e;
+      border: 1px solid #3a3a3a;
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 640px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+    }
+    
+    .modal h2 {
+      font-size: 19px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .modal p {
+      font-size: 13.5px;
+      color: var(--text-dim);
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    
+    .tutorial-single {
+      background: #262626;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    
+    .tutorial-single h3 {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .tutorial-single ol {
+      padding-left: 18px;
+      font-size: 13px;
+      color: #cfcfcf;
+      line-height: 1.7;
+    }
+    
+    .tutorial-single strong {
+      color: var(--accent);
+    }
+    
+    #apiKeyInput {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid #3a3a3a;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text-main);
+      font-size: 14px;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    
+    #saveApiKeyBtn {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .mobile-menu-btn {
+        display: block;
+      }
+      .msg.user {
+        padding: 8px 4%;
+      }
+      .msg.assistant {
+        padding: 12px 4%;
+      }
+      .msg.user .msg-bubble {
+        max-width: 85%;
+      }
+      .capability-toggle {
+        gap: 4px;
+      }
+      .capability-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <button class="new-chat-btn" id="newChatBtn"><i class="fa-solid fa-plus"></i> <span data-i18n="newChat">Nuova Chat</span></button>
+      <div class="chat-history" id="chatHistory"></div>
+      <div class="sidebar-footer">
+        <button class="footer-btn" id="langToggleBtn"><i class="fa-solid fa-globe"></i> <span>IT / EN</span></button>
+        <button class="footer-btn" id="settingsBtn"><i class="fa-solid fa-key"></i> <span data-i18n="settings">Impostazioni API</span></button>
+      </div>
+    </aside>
+
+    <main class="chat-area">
+      <header class="chat-header">
+        <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fa-solid fa-bars"></i></button>
+        <h1 id="chatTitle">OpenSAC</h1>
+      </header>
+
+      <div class="messages" id="messages"></div>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="empty-state-icon"><i class="fa-solid fa-bolt"></i></div>
+        <h2 data-i18n="emptyTitle">Come posso aiutarti oggi?</h2>
+        <p data-i18n="emptySubtitle">Scrivi un messaggio qui sotto per iniziare a chattare con l'AI.</p>
+      </div>
+
+      <div class="block-banner" id="blockBanner" style="display:none;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="blockBannerText"></span>
+      </div>
+
+      <div class="input-area" id="inputArea">
+        <textarea id="userInput" rows="1" data-i18n-placeholder="typeMessage" placeholder="Scrivi un messaggio..."></textarea>
+        <div class="capability-toggle" id="capabilityToggle">
+          <button class="capability-btn" id="webSearchBtn" title="Web Search"><i class="fa-solid fa-globe"></i> Web</button>
+          <button class="capability-btn" id="fileUploadBtn" title="Allega file/immagine"><i class="fa-solid fa-paperclip"></i></button>
+          <button class="capability-btn" id="thinkingBtn" title="Thinking"><i class="fa-solid fa-brain"></i></button>
+        </div>
+        <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.csv,.docx" style="display:none;" multiple>
+        <button id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+
+      <div class="blocked-area" id="blockedArea" style="display:none;">
+        <i class="fa-solid fa-lock"></i>
+        <span id="blockedText"></span>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="apiModal">
+    <div class="modal">
+      <h2><i class="fa-solid fa-key"></i> <span data-i18n="modalTitle">Inserisci la tua Groq API Key</span></h2>
+      <p data-i18n="modalDesc">Per usare OpenSAC serve una API Key gratuita di Groq Cloud. Resta salvata solo nel tuo browser (LocalStorage) e non viene mai inviata altrove.</p>
+      <div class="tutorial-single" id="tutorialContainer">
+        <!-- il contenuto del tutorial viene popolato dinamicamente in base alla lingua -->
+      </div>
+      <input type="text" id="apiKeyInput" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+      <label for="modelSelect" style="display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;" data-i18n="modelLabel">Modello AI</label>
+      <select id="modelSelect" style="width:100%;background:var(--bg-input);border:1px solid #3a3a3a;border-radius:10px;padding:12px 14px;color:var(--text-main);font-size:14px;margin-bottom:14px;outline:none;">
+        <option value="openai/gpt-oss-120b">GPT-OSS 120B (consigliato, alta qualità)</option>
+        <option value="openai/gpt-oss-20b">GPT-OSS 20B (più veloce)</option>
+        <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
+        <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+      </select>
+      <button id="saveApiKeyBtn" data-i18n="saveKey">Salva e Inizia</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      "use strict";
+
+      const i18n = {
+        it: {
+          appTitle: "OpenSAC",
+          newChat: "Nuova Chat",
+          settings: "Impostazioni API",
+          typeMessage: "Scrivi un messaggio... (Invio per inviare, Shift+Invio per andare a capo)",
+          thinking: "Sto pensando...",
+          modalTitle: "Inserisci la tua Groq API Key",
+          modalDesc: "Per usare OpenSAC serve una API Key gratuita di Groq Cloud. Resta salvata solo nel tuo browser (LocalStorage) e non viene mai inviata altrove.",
+          saveKey: "Salva e Inizia",
+          deleteConfirm: "Vuoi eliminare questa chat?",
+          defaultChatTitle: "Nuova Chat",
+          blockBanner: "LIMITE GIORNALIERO SUPERATO",
+          blockedTextPrefix: "Hai raggiunto il limite giornaliero di richieste gratuite di Groq. Riprova dopo le",
+          errorGeneric: "Si è verificato un errore durante la richiesta. Controlla la tua API Key e riprova.",
+          invalidKey: "Inserisci una API Key Groq valida (deve iniziare con gsk_).",
+          modelLabel: "Modello AI",
+          emptyTitle: "Come posso aiutarti oggi?",
+          emptySubtitle: "Scrivi un messaggio qui sotto per iniziare a chattare con l'AI.",
+          copy: "Copia",
+          copied: "Copiato!",
+          tutorialTitle: "🇮🇹 Italiano",
+          tutorialSteps: [
+            'Vai su <strong>groq.com</strong> e clicca su "Login" / "Sign Up".',
+            "Registrati gratuitamente con Google, GitHub o email.",
+            'Nella dashboard, apri la sezione <strong>"API Keys"</strong> nel menu laterale.',
+            'Clicca <strong>"Create API Key"</strong>, dai un nome alla chiave e copiala (inizia con <strong>gsk_...</strong>).',
+            'Incolla la chiave qui sotto e premi "Salva e Inizia".'
+          ]
+        },
+        en: {
+          appTitle: "OpenSAC",
+          newChat: "New Chat",
+          settings: "API Settings",
+          typeMessage: "Type a message... (Enter to send, Shift+Enter for new line)",
+          thinking: "Thinking...",
+          modalTitle: "Enter your Groq API Key",
+          modalDesc: "To use OpenSAC you need a free Groq Cloud API Key. It stays saved only in your browser (LocalStorage) and is never sent anywhere else.",
+          saveKey: "Save & Start",
+          deleteConfirm: "Delete this chat?",
+          defaultChatTitle: "New Chat",
+          blockBanner: "DAILY LIMIT EXCEEDED",
+          blockedTextPrefix: "You have reached the Groq free daily request limit. Try again after",
+          errorGeneric: "An error occurred with the request. Check your API Key and try again.",
+          invalidKey: "Please enter a valid Groq API Key (must start with gsk_).",
+          modelLabel: "AI Model",
+          emptyTitle: "How can I help you today?",
+          emptySubtitle: "Type a message below to start chatting with the AI.",
+          copy: "Copy",
+          copied: "Copied!",
+          tutorialTitle: "🇬🇧 English",
+          tutorialSteps: [
+            'Go to <strong>groq.com</strong> and click "Login" / "Sign Up".',
+            "Sign up for free using Google, GitHub or email.",
+            'In the dashboard, open the <strong>"API Keys"</strong> section in the side menu.',
+            'Click <strong>"Create API Key"</strong>, name it and copy it (starts with <strong>gsk_...</strong>).',
+            'Paste the key below and press "Save & Start".'
+          ]
+        }
+      };
+
+      const state = {
+        apiKey: localStorage.getItem('groq_api_key') || '',
+        model: localStorage.getItem('groq_model') || 'openai/gpt-oss-120b',
+        lang: localStorage.getItem('groq_lang') || 'it',
+        blockUntil: parseInt(localStorage.getItem('groq_block_until') || '0', 10) || 0,
+        conversations: [],
+        currentId: null,
+        isThinking: false,
+        webSearchEnabled: false,
+        thinkingEnabled: false,
+        uploadedFiles: []
+      };
+
+      try {
+        state.conversations = JSON.parse(localStorage.getItem('groq_conversations') || '[]');
+      } catch (e) {
+        state.conversations = [];
+      }
+
+      const elSidebar = document.getElementById('sidebar');
+      const elChatHistory = document.getElementById('chatHistory');
+      const elMessages = document.getElementById('messages');
+      const elEmptyState = document.getElementById('emptyState');
+      const elChatTitle = document.getElementById('chatTitle');
+      const elInputArea = document.getElementById('inputArea');
+      const elUserInput = document.getElementById('userInput');
+      const elSendBtn = document.getElementById('sendBtn');
+      const elBlockBanner = document.getElementById('blockBanner');
+      const elBlockBannerText = document.getElementById('blockBannerText');
+      const elBlockedArea = document.getElementById('blockedArea');
+      const elBlockedText = document.getElementById('blockedText');
+      const elApiModal = document.getElementById('apiModal');
+      const elApiKeyInput = document.getElementById('apiKeyInput');
+      const elModelSelect = document.getElementById('modelSelect');
+      const elSaveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+      const elNewChatBtn = document.getElementById('newChatBtn');
+      const elSettingsBtn = document.getElementById('settingsBtn');
+      const elLangToggleBtn = document.getElementById('langToggleBtn');
+      const elMobileMenuBtn = document.getElementById('mobileMenuBtn');
+      const elWebSearchBtn = document.getElementById('webSearchBtn');
+      const elFileUploadBtn = document.getElementById('fileUploadBtn');
+      const elThinkingBtn = document.getElementById('thinkingBtn');
+      const elFileInput = document.getElementById('fileInput');
+      const elTutorialContainer = document.getElementById('tutorialContainer');
+
+      function saveConversations() {
+        localStorage.setItem('groq_conversations', JSON.stringify(state.conversations));
+      }
+
+      function getCurrentConversation() {
+        return state.conversations.find(c => c.id === state.currentId) || null;
+      }
+
+      function createNewChat() {
+        const id = 'c_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        const convo = { id, title: i18n[state.lang].defaultChatTitle, messages: [] };
+        state.conversations.unshift(convo);
+        state.currentId = id;
+        saveConversations();
+        renderSidebar();
+        renderMessages();
+        if (window.innerWidth <= 768) elSidebar.classList.remove('open');
+      }
+
+      function selectChat(id) {
+        state.currentId = id;
+        renderSidebar();
+        renderMessages();
+        if (window.innerWidth <= 768) elSidebar.classList.remove('open');
+      }
+
+      function deleteChat(id, ev) {
+        ev.stopPropagation();
+        if (!window.confirm(i18n[state.lang].deleteConfirm)) return;
+        const idx = state.conversations.findIndex(c => c.id === id);
+        if (idx === -1) return;
+        state.conversations.splice(idx, 1);
+        if (state.currentId === id) {
+          state.currentId = state.conversations[0]?.id || null;
+        }
+        saveConversations();
+        if (!state.currentId) {
+          createNewChat();
+        } else {
+          renderSidebar();
+          renderMessages();
+        }
+      }
+
+      function renderSidebar() {
+        elChatHistory.innerHTML = '';
+        state.conversations.forEach(convo => {
+          const item = document.createElement('div');
+          item.className = 'chat-item' + (convo.id === state.currentId ? ' active' : '');
+          item.addEventListener('click', () => selectChat(convo.id));
+
+          const titleSpan = document.createElement('span');
+          titleSpan.className = 'chat-item-title';
+          titleSpan.textContent = convo.title;
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'chat-item-delete';
+          delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+          delBtn.addEventListener('click', (e) => deleteChat(convo.id, e));
+
+          item.appendChild(titleSpan);
+          item.appendChild(delBtn);
+          elChatHistory.appendChild(item);
+        });
+      }
+
+      function enhanceCodeBlocks(bubble) {
+        const pres = bubble.querySelectorAll('pre');
+        pres.forEach(pre => {
+          const codeEl = pre.querySelector('code');
+          if (!codeEl) return;
+          if (window.hljs) {
+            try { hljs.highlightElement(codeEl); } catch (e) {}
+          }
+          const langMatch = codeEl.className.match(/language-(\w+)/);
+          const lang = langMatch ? langMatch[1] : 'text';
+
+          const wrapDiv = document.createElement('div');
+          wrapDiv.className = 'code-block-wrap';
+
+          const header = document.createElement('div');
+          header.className = 'code-header';
+
+          const langLabel = document.createElement('span');
+          langLabel.className = 'code-lang';
+          langLabel.textContent = lang;
+
+          const copyBtn = document.createElement('button');
+          copyBtn.className = 'code-copy-btn';
+          copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i><span>' + i18n[state.lang].copy + '</span>';
+          copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(codeEl.textContent).then(() => {
+              const span = copyBtn.querySelector('span');
+              const icon = copyBtn.querySelector('i');
+              span.textContent = i18n[state.lang].copied;
+              icon.className = 'fa-solid fa-check';
+              setTimeout(() => {
+                span.textContent = i18n[state.lang].copy;
+                icon.className = 'fa-regular fa-copy';
+              }, 1600);
+            }).catch(() => {});
+          });
+
+          header.appendChild(langLabel);
+          header.appendChild(copyBtn);
+
+          pre.parentNode.insertBefore(wrapDiv, pre);
+          wrapDiv.appendChild(header);
+          wrapDiv.appendChild(pre);
+        });
+      }
+
+      function buildMessageEl(role, content, isThinkingBubble) {
+        const wrap = document.createElement('div');
+        wrap.className = 'msg ' + role;
+
+        if (role === 'assistant') {
+          const avatar = document.createElement('div');
+          avatar.className = 'msg-avatar';
+          avatar.innerHTML = '<i class="fa-solid fa-bolt"></i>';
+          wrap.appendChild(avatar);
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble' + (isThinkingBubble ? ' thinking' : '');
+
+        if (isThinkingBubble) {
+          bubble.innerHTML = '<div class="thinking-dots" aria-label="' + i18n[state.lang].thinking +
+            '"><span></span><span></span><span></span></div>';
+        } else if (role === 'assistant' && window.marked) {
+          bubble.classList.add('markdown-content');
+          bubble.innerHTML = marked.parse(content, { breaks: true, sanitize: true });
+          enhanceCodeBlocks(bubble);
+        } else {
+          bubble.textContent = content;
+        }
+
+        wrap.appendChild(bubble);
+        return wrap;
+      }
+
+      function updateHeaderTitle() {
+        const convo = getCurrentConversation();
+        elChatTitle.textContent = convo ? convo.title : i18n[state.lang].appTitle;
+      }
+
+      function renderMessages() {
+        elMessages.innerHTML = '';
+        updateHeaderTitle();
+        const convo = getCurrentConversation();
+        let hasContent = false;
+        if (convo) {
+          convo.messages.forEach(msg => {
+            elMessages.appendChild(buildMessageEl(msg.role, msg.content, false));
+            hasContent = true;
+          });
+        }
+        if (state.isThinking) {
+          elMessages.appendChild(buildMessageEl('assistant', i18n[state.lang].thinking, true));
+          hasContent = true;
+        }
+        elMessages.style.display = hasContent ? 'flex' : 'none';
+        elEmptyState.style.display = hasContent ? 'none' : 'flex';
+        scrollToBottom();
+      }
+
+      function scrollToBottom() {
+        elMessages.scrollTop = elMessages.scrollHeight;
+      }
+
+      function isBlocked() {
+        return !!(state.blockUntil && Date.now() < state.blockUntil);
+      }
+
+      function setInputDisabled(disabled) {
+        const blocked = isBlocked();
+        elUserInput.disabled = disabled || blocked;
+        elSendBtn.disabled = disabled || blocked;
+      }
+
+      function updateBlockUI() {
+        if (isBlocked()) {
+          const resetDate = new Date(state.blockUntil);
+          const locale = state.lang === 'it' ? 'it-IT' : 'en-US';
+          const resetStr = resetDate.toLocaleString(locale, { day: '2-digit', month: '2-digit', hour: '2-digit',
+            minute: '2-digit' });
+          elBlockBannerText.textContent = i18n[state.lang].blockBanner;
+          elBlockedText.textContent = i18n[state.lang].blockedTextPrefix + ' ' + resetStr;
+          elBlockBanner.style.display = 'flex';
+          elBlockedArea.style.display = 'flex';
+          elInputArea.style.display = 'none';
+        } else {
+          elBlockBanner.style.display = 'none';
+          elBlockedArea.style.display = 'none';
+          elInputArea.style.display = 'flex';
+        }
+        setInputDisabled(false);
+      }
+
+      function checkBlockStatus() {
+        if (state.blockUntil && Date.now() >= state.blockUntil) {
+          state.blockUntil = 0;
+          localStorage.removeItem('groq_block_until');
+        }
+        updateBlockUI();
+      }
+
+      function triggerBlock() {
+        return fetch('https://worldtimeapi.org/api/timezone/Etc/UTC')
+          .then(res => res.ok ? res.json() : null)
+          .catch(() => null)
+          .then(data => {
+            const nowMs = (data && data.unixtime) ? data.unixtime * 1000 : Date.now();
+            state.blockUntil = nowMs + 24 * 60 * 60 * 1000;
+            localStorage.setItem('groq_block_until', String(state.blockUntil));
+            updateBlockUI();
+          });
+      }
+
+      function updateCapabilityButtons() {
+        const model = state.model;
+        // Web search con browser_search per Groq
+        const supportsWeb = true; // Groq supporta browser_search come tipo di tool
+        const supportsFiles = true;
+        const supportsThinking = model.includes('gpt-oss') || model.includes('llama-3.3');
+
+        elWebSearchBtn.disabled = !supportsWeb;
+        elFileUploadBtn.disabled = !supportsFiles;
+        elThinkingBtn.disabled = !supportsThinking;
+
+        if (!supportsWeb) state.webSearchEnabled = false;
+        if (!supportsThinking) state.thinkingEnabled = false;
+
+        elWebSearchBtn.classList.toggle('active', state.webSearchEnabled && supportsWeb);
+        elThinkingBtn.classList.toggle('active', state.thinkingEnabled && supportsThinking);
+      }
+
+      function applyLanguage() {
+        const dict = i18n[state.lang];
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (dict[key] !== undefined) el.textContent = dict[key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+          const key = el.getAttribute('data-i18n-placeholder');
+          if (dict[key] !== undefined) el.placeholder = dict[key];
+        });
+        document.documentElement.lang = state.lang;
+        renderTutorial();
+      }
+
+      function renderTutorial() {
+        if (!elTutorialContainer) return;
+        const dict = i18n[state.lang];
+        let html = '<h3>' + dict.tutorialTitle + '</h3><ol>';
+        dict.tutorialSteps.forEach(step => {
+          html += '<li>' + step + '</li>';
+        });
+        html += '</ol>';
+        elTutorialContainer.innerHTML = html;
+      }
+
+      function clearFilePreviews() {
+        const existing = document.querySelectorAll('.file-preview');
+        existing.forEach(el => el.remove());
+      }
+
+      function renderFilePreviews() {
+        clearFilePreviews();
+        const inputContainer = document.getElementById('inputArea');
+        const textarea = document.getElementById('userInput');
+        state.uploadedFiles.forEach((file, index) => {
+          const preview = document.createElement('div');
+          preview.className = 'file-preview';
+          if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            preview.appendChild(img);
+          } else {
+            const icon = document.createElement('i');
+            icon.className = 'fa-solid fa-file-lines';
+            preview.appendChild(icon);
+          }
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = file.name;
+          const removeBtn = document.createElement('button');
+          removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+          removeBtn.addEventListener('click', () => {
+            state.uploadedFiles.splice(index, 1);
+            renderFilePreviews();
+          });
+          preview.appendChild(nameSpan);
+          preview.appendChild(removeBtn);
+          inputContainer.insertBefore(preview, textarea);
+        });
+      }
+
+      function handleFiles(files) {
+        Array.from(files).forEach(file => {
+          if (!state.uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+            state.uploadedFiles.push(file);
+          }
+        });
+        renderFilePreviews();
+      }
+
+      async function sendMessage() {
+        const text = elUserInput.value.trim();
+        if ((!text && state.uploadedFiles.length === 0) || isBlocked()) return;
+        if (!state.currentId) createNewChat();
+        const convo = getCurrentConversation();
+        if (!convo) return;
+
+        let userContent = text;
+        if (state.uploadedFiles.length > 0) {
+          const fileNames = state.uploadedFiles.map(f => f.name).join(', ');
+          userContent = (text ? text + '\n' : '') + '[File allegati: ' + fileNames + ']';
+        }
+
+        if (convo.messages.length === 0) {
+          convo.title = text.split(/\s+/).slice(0, 6).join(' ') || 'File upload';
+        }
+        convo.messages.push({ role: 'user', content: userContent });
+
+        elUserInput.value = '';
+        elUserInput.style.height = 'auto';
+        state.uploadedFiles = [];
+        clearFilePreviews();
+        saveConversations();
+        renderSidebar();
+        state.isThinking = true;
+        renderMessages();
+        setInputDisabled(true);
+
+        const systemPrompt = state.lang === 'it' ?
+          'Rispondi sempre in modo chiaro, utile e conciso, esclusivamente in lingua italiana.' :
+          'Always answer clearly, helpfully and concisely, exclusively in English.';
+
+        const payloadMessages = [{ role: 'system', content: systemPrompt }];
+        convo.messages.forEach(m => payloadMessages.push({ role: m.role, content: m.content }));
+
+        let requestBody = {
+          model: state.model,
+          messages: payloadMessages
+        };
+
+        // Aggiungi web search come tool browser_search
+        if (state.webSearchEnabled) {
+          requestBody.tools = [{ type: "browser_search" }];
+        }
+
+        // Aggiungi thinking/reasoning se abilitato
+        if (state.thinkingEnabled && (state.model.includes('gpt-oss') || state.model.includes('llama-3.3'))) {
+          requestBody.reasoning = true;
+        }
+
+        try {
+          const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + state.apiKey
+            },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (response.status === 429) {
+            state.isThinking = false;
+            await triggerBlock();
+            renderMessages();
+            setInputDisabled(false);
+            return;
+          }
+
+          if (!response.ok) {
+            const rawText = await response.text();
+            let detail = 'HTTP ' + response.status;
+            try {
+              const parsed = JSON.parse(rawText);
+              if (parsed?.error?.message) detail = parsed.error.message;
+            } catch (e) {
+              if (rawText) detail = rawText;
+            }
+            console.error('Groq API error:', detail);
+            convo.messages.push({ role: 'assistant', content: i18n[state.lang].errorGeneric + ' (' + detail +
+                ')' });
+            state.isThinking = false;
+            saveConversations();
+            renderMessages();
+            setInputDisabled(false);
+            return;
+          }
+
+          const data = await response.json();
+          const reply = data?.choices?.[0]?.message?.content || i18n[state.lang].errorGeneric;
+          convo.messages.push({ role: 'assistant', content: reply });
+          state.isThinking = false;
+          saveConversations();
+          renderMessages();
+          setInputDisabled(false);
+
+        } catch (err) {
+          console.error('Fetch failed:', err);
+          convo.messages.push({ role: 'assistant', content: i18n[state.lang].errorGeneric + ' (' + (err.message ||
+              err) + ')' });
+          state.isThinking = false;
+          saveConversations();
+          renderMessages();
+          setInputDisabled(false);
+        } finally {
+          elUserInput.focus();
+        }
+      }
+
+      // Event Listeners
+      elUserInput.addEventListener('input', () => {
+        elUserInput.style.height = 'auto';
+        elUserInput.style.height = Math.min(elUserInput.scrollHeight, 200) + 'px';
+      });
+
+      elUserInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      elSendBtn.addEventListener('click', sendMessage);
+      elNewChatBtn.addEventListener('click', createNewChat);
+
+      elSettingsBtn.addEventListener('click', () => {
+        elApiKeyInput.value = state.apiKey;
+        elModelSelect.value = state.model;
+        elApiModal.style.display = 'flex';
+        updateCapabilityButtons();
+      });
+
+      elSaveApiKeyBtn.addEventListener('click', () => {
+        const val = elApiKeyInput.value.trim();
+        if (!val || !val.startsWith('gsk_') || val.length < 10) {
+          window.alert(i18n[state.lang].invalidKey);
+          return;
+        }
+        state.apiKey = val;
+        localStorage.setItem('groq_api_key', val);
+        state.model = elModelSelect.value;
+        localStorage.setItem('groq_model', state.model);
+        elApiModal.style.display = 'none';
+        updateCapabilityButtons();
+        if (state.conversations.length === 0) createNewChat();
+      });
+
+      elLangToggleBtn.addEventListener('click', () => {
+        state.lang = state.lang === 'it' ? 'en' : 'it';
+        localStorage.setItem('groq_lang', state.lang);
+        applyLanguage();
+        renderSidebar();
+        updateHeaderTitle();
+        updateBlockUI();
+        updateCapabilityButtons();
+      });
+
+      elMobileMenuBtn.addEventListener('click', () => {
+        elSidebar.classList.toggle('open');
+      });
+
+      elWebSearchBtn.addEventListener('click', () => {
+        if (elWebSearchBtn.disabled) return;
+        state.webSearchEnabled = !state.webSearchEnabled;
+        elWebSearchBtn.classList.toggle('active', state.webSearchEnabled);
+      });
+
+      elThinkingBtn.addEventListener('click', () => {
+        if (elThinkingBtn.disabled) return;
+        state.thinkingEnabled = !state.thinkingEnabled;
+        elThinkingBtn.classList.toggle('active', state.thinkingEnabled);
+      });
+
+      elFileUploadBtn.addEventListener('click', () => {
+        if (elFileUploadBtn.disabled) return;
+        elFileInput.click();
+      });
+
+      elFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleFiles(e.target.files);
+          elFileInput.value = '';
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768 && elSidebar.classList.contains('open')) {
+          if (!elSidebar.contains(e.target) && e.target !== elMobileMenuBtn && !elMobileMenuBtn.contains(e.target)) {
+            elSidebar.classList.remove('open');
+          }
+        }
+      });
+
+      function init() {
+        applyLanguage();
+        checkBlockStatus();
+        elModelSelect.value = state.model;
+        updateCapabilityButtons();
+
+        if (!state.apiKey) {
+          elApiModal.style.display = 'flex';
+        } else {
+          elApiModal.style.display = 'none';
+        }
+
+        if (state.conversations.length === 0) {
+          createNewChat();
+        } else {
+          state.currentId = state.conversations[0].id;
+          renderSidebar();
+          renderMessages();
+        }
+
+        setInterval(checkBlockStatus, 30000);
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
