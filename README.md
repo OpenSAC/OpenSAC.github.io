@@ -89,7 +89,7 @@ php -S localhost:8000
 
 Then visit http://localhost:8000
 
-### Method 3: GitHub Pages
+# Method 3: GitHub Pages
 
 1. Fork the repository
 
